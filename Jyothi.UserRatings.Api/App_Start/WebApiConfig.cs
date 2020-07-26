@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json.Serialization;
+﻿using Jyothi.UserRatings.Api.App_Start;
+using Newtonsoft.Json.Serialization;
 using System.Web.Http;
 
 namespace Jyothi.UserRatings.Api
@@ -8,7 +9,7 @@ namespace Jyothi.UserRatings.Api
         public static void Register(HttpConfiguration config)
         {
             // Web API configuration and services
-            //TODO : Autofac
+            AutofacConfig.Register();
 
             //Change Case of JSON
             config.Formatters.JsonFormatter.SerializerSettings.ContractResolver =

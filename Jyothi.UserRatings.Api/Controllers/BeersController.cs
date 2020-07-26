@@ -1,23 +1,24 @@
 ﻿using Jyothi.UserRatings.Api.Utilities;
 using Jyothi.UserRatings.Api.Data.Entities;
 using Jyothi.UserRatings.Api.Models;
-using Jyothi.UserRatings.PunkApi.Client;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Http;
+using Jyothi.UserRatings.Api.Data;
 
 namespace Jyothi.UserRatings.Api.Controllers
 {
     public class BeersController : ApiController
     {
-        JsonUtility jsonUtil;
-        public BeersController()
+        IBeersRepository _beerRepository;
+        IJsonUtility _jsonUtility;
+        public BeersController(IBeersRepository beerRepository, IJsonUtility jsonUtility)
         {
-            //InitializeClient
-            jsonUtil = new JsonUtility(); //TODO: Will move this to Autofac DI
+            _beerRepository = beerRepository;
+            _jsonUtility = jsonUtility;
         }
         /// <summary>
         /// Task # 2 - Get top 25 beers matching input string from Punk API along with rating details
@@ -35,7 +36,7 @@ namespace Jyothi.UserRatings.Api.Controllers
                     List<RatingsEntity> dbRatings = null;
 
                     //2. Get top 25 beers from Punk API that matches input string
-                    var beers = await PunkProcessor.GetBeersContainingInput(name);
+                    var beers = await _beerRepository.GetBeersByName(name);
                     //3. Return Not Found Exception
                     if (beers == null) return NotFound();
 
@@ -43,7 +44,7 @@ namespace Jyothi.UserRatings.Api.Controllers
                     if (beers.Any()) 
                     {
                         //5. Get Json ratings
-                        dbRatings = JsonConvert.DeserializeObject<List<RatingsEntity>>(jsonUtil.Read("database.json", "Data"));//Get all ratings
+                        dbRatings = JsonConvert.DeserializeObject<List<RatingsEntity>>(_jsonUtility.Read("database.json", "Data"));//Get all ratings
 
                         //6. Assign ratings for each beer
                         foreach (var beer in beers)

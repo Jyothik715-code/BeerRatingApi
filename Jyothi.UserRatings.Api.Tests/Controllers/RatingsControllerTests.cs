@@ -1,12 +1,12 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Jyothi.UserRatings.Api.Controllers;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Jyothi.UserRatings.Api.Models;
 using System.Web.Http;
+using Moq;
+using Jyothi.UserRatings.Api.Data;
+using Jyothi.UserRatings.PunkApi.Client;
+using Jyothi.UserRatings.Api.Utilities;
 
 namespace Jyothi.UserRatings.Api.Controllers.Tests
 {
@@ -14,10 +14,10 @@ namespace Jyothi.UserRatings.Api.Controllers.Tests
     public class RatingsControllerTests
     {
         [TestMethod()]
-        public async void PostTest()
+        public void PostTest()
         {
-            // Arrange
-            RatingsController controller = new RatingsController();
+            //Arrange
+            RatingsController controller = MockControllerCtor();
 
             var input = new UserRatingsModel
             {
@@ -27,13 +27,38 @@ namespace Jyothi.UserRatings.Api.Controllers.Tests
             };
 
             // Act
-            IHttpActionResult result = await controller.Post(1, input);
+            Task<IHttpActionResult> result = controller.Post(42, input);
 
             //    // Assert
-            Assert.IsNotNull(result);
-            //Assert.AreEqual(2, result.Count());
-            //Assert.AreEqual("Comment1", result.ElementAt(0));
-            //Assert.AreEqual("value2", result.ElementAt(1));
+            Assert.IsNotNull(result.Result);
+            Assert.AreEqual(2, ((System.Web.Http.Results.OkNegotiatedContentResult<Data.Entities.RatingsEntity>)result.Result).Content.Id);
+            Assert.AreEqual(42, ((System.Web.Http.Results.OkNegotiatedContentResult<Data.Entities.RatingsEntity>)result.Result).Content.BeerId);
+        }
+
+        private static RatingsController MockControllerCtor()
+        {
+            var mockRepository = new Mock<IBeersRepository>();
+            mockRepository.Setup(x => x.GetBeer(42))
+                .Returns(Task.FromResult(
+                    new List<BeerModel> {
+                new BeerModel
+                {
+                    Id = 42,
+                    Name = "TestBeer1",
+                    Description = "Descrption1"
+                }
+            }));
+
+            var mockJson = new Mock<IJsonUtility>();
+            mockJson.Setup(x => x.Read("database.json", "Data"))
+                .Returns("[{\"Id\":1,\"UserRatings\":{\"Username\":\"Testuser2\",\"Rating\":4,\"Comments\":\"TestCommebts\"},\"BeerId\":42}]");
+
+            //mockJson.Setup(x => x.Write("database.json", "Data", "[{\"Id\":1,\"UserRatings\":{\"Username\":\"Testuser2\",\"Rating\":4,\"Comments\":\"TestCommebts\"},\"BeerId\":42}]"))
+            //    .Returns(null);
+
+            // Arrange
+            RatingsController controller = new RatingsController(mockRepository.Object, mockJson.Object);
+            return controller;
         }
     }
 }

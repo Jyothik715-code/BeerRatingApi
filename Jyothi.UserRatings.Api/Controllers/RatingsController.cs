@@ -2,24 +2,26 @@
 using Jyothi.UserRatings.Api.Data.Entities;
 using Jyothi.UserRatings.Api.Filters;
 using Jyothi.UserRatings.Api.Models;
-using Jyothi.UserRatings.PunkApi.Client;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Http;
+using Jyothi.UserRatings.Api.Data;
 
 namespace Jyothi.UserRatings.Api.Controllers
 {
     //[RoutePrefix("api/ratings")]
     public class RatingsController : ApiController
     {
-        JsonUtility jsonUtil;
-        public RatingsController()
+        IBeersRepository _beerRepository;
+        IJsonUtility _jsonUtility;
+
+        public RatingsController(IBeersRepository beerRepository, IJsonUtility jsonUtility)
         {
-            //InitializeClient
-            jsonUtil = new JsonUtility(); //TODO: Will move this to Autofac DI
+            _beerRepository = beerRepository;
+            _jsonUtility = jsonUtility;
         }
 
         /// <summary>
@@ -40,14 +42,14 @@ namespace Jyothi.UserRatings.Api.Controllers
                     List<RatingsEntity> dbRatings = null;
 
                     //2. Validate if beer exisis in Punk API
-                    var beer = await PunkProcessor.GetBeer(id);
+                    var beer = await _beerRepository.GetBeer(id);
                     if (beer == null) return NotFound();
 
                     //3. If ID exists in Punk API, add rating and save to database.json
                     if (beer.Any())
                     {
                         //4. Read Json and increment Rating Id
-                        dbRatings = JsonConvert.DeserializeObject<List<RatingsEntity>>(jsonUtil.Read("database.json", "Data"));
+                        dbRatings = JsonConvert.DeserializeObject<List<RatingsEntity>>(_jsonUtility.Read("database.json", "Data"));
                         var count = dbRatings?.Max(x => x.Id);
                         count = count == null ? 1 : count + 1;
 
@@ -65,7 +67,7 @@ namespace Jyothi.UserRatings.Api.Controllers
 
                         //7. Write and Save to database.json
                         string dbRatingsJson = JsonConvert.SerializeObject(dbRatings);
-                        jsonUtil.Write("database.json", "Data", dbRatingsJson);
+                        _jsonUtility.Write("database.json", "Data", dbRatingsJson);
 
                         //8. Return Success with rating info
                         return Ok(ratings);

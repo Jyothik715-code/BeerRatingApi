@@ -6,7 +6,7 @@ namespace Jyothi.UserRatings.Api.Utilities
     /// <summary>
     /// Utility to read and write Json files provided location and file name
     /// </summary>
-    public class JsonUtility
+    public class JsonUtility : IJsonUtility
     {
         /// <summary>
         /// Reads Json File
